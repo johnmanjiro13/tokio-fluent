@@ -2,6 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::{collections::HashMap, time::SystemTime};
 
+use anyhow::anyhow;
 use crossbeam::channel::{self, Sender};
 use rmp_serde::Serializer;
 use serde::{Deserialize, Serialize};
@@ -11,43 +12,27 @@ use tokio::task::JoinHandle;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Record {
+    tag: &'static str,
     timestamp: u64,
     entry: HashMap<String, String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct Message {
-    tag: &'static str,
-    entries: Vec<Record>,
-}
-
 struct Client {
-    sender: Sender<HashMap<String, String>>,
+    sender: Sender<Record>,
     worker: JoinHandle<io::Result<()>>,
 }
 
 impl Client {
     async fn new() -> io::Result<Client> {
         let mut socket = TcpStream::connect("127.0.0.1:24224").await?;
-        let (sender, receiver) = channel::unbounded();
+        let (sender, receiver) = channel::unbounded::<Record>();
 
         let worker = tokio::spawn(async move {
             loop {
                 match receiver.try_recv() {
-                    Ok(entry) => {
-                        let record = Record {
-                            timestamp: SystemTime::now()
-                                .duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap()
-                                .as_secs(),
-                            entry,
-                        };
-                        let message = Message {
-                            tag: "client.test",
-                            entries: vec![record],
-                        };
+                    Ok(record) => {
                         let mut buf = Vec::new();
-                        message.serialize(&mut Serializer::new(&mut buf)).unwrap();
+                        record.serialize(&mut Serializer::new(&mut buf)).unwrap();
                         socket.write_all(&buf).await?;
                     }
                     Err(channel::TryRecvError::Empty) => continue,
@@ -61,11 +46,15 @@ impl Client {
         Ok(Client { sender, worker })
     }
 
-    fn send(
-        &self,
-        entry: HashMap<String, String>,
-    ) -> Result<(), channel::SendError<HashMap<String, String>>> {
-        self.sender.send(entry)
+    fn send(&self, tag: &'static str, entry: HashMap<String, String>) -> anyhow::Result<()> {
+        let record = Record {
+            tag,
+            entry,
+            timestamp: SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)?
+                .as_secs(),
+        };
+        self.sender.send(record).map_err(|e| anyhow!(e))
     }
 }
 
@@ -74,12 +63,12 @@ async fn main() -> io::Result<()> {
     let client = Client::new().await?;
     let mut map = HashMap::new();
     map.insert("Key".to_string(), "Value".to_string());
-    client.send(map).unwrap();
+    client.send("fluent.test", map).unwrap();
 
     sleep(Duration::new(3, 0));
 
     let mut map2 = HashMap::new();
     map2.insert("Key2".to_string(), "Value2".to_string());
-    client.send(map2).unwrap();
+    client.send("client.test", map2).unwrap();
     Ok(())
 }
