@@ -12,6 +12,7 @@
 //! client.send("fluent.test", map).unwrap();
 //! ```
 
+use std::net::SocketAddr;
 use std::time::SystemTime;
 
 use crossbeam::channel::{self, Sender};
@@ -21,6 +22,21 @@ use crate::entry::Map;
 use crate::worker::{Message, Record, Worker};
 
 #[derive(Debug, Clone)]
+/// Config for a client.
+pub struct Config {
+    /// Address of the fluentd server.
+    pub addr: SocketAddr,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            addr: "127.0.0.1:24224".parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 /// A fluentd client.
 pub struct Client {
     sender: Sender<Message>,
@@ -28,8 +44,8 @@ pub struct Client {
 
 impl Client {
     /// Connect to the fluentd server and create a worker with tokio::spawn.
-    pub async fn new() -> tokio::io::Result<Client> {
-        let socket = TcpStream::connect("127.0.0.1:24224").await?;
+    pub async fn new(config: &Config) -> tokio::io::Result<Client> {
+        let socket = TcpStream::connect(config.addr).await?;
         let (sender, receiver) = channel::unbounded();
 
         let _ = tokio::spawn(async move {

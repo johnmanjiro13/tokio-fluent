@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 use std::thread;
 
-use tokio_fluent::client::Client;
+use tokio_fluent::client::{Client, Config};
 use tokio_fluent::entry::{Map, Value};
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
-    let client = Client::new().await?;
+    let client = Client::new(&Config {
+        addr: "127.0.0.1:24224".parse().unwrap(),
+    })
+    .await?;
 
     let mut m = HashMap::new();
     m.insert("Key".to_string(), "Value".into());
