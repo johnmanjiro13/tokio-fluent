@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-use anyhow::anyhow;
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
 
@@ -13,7 +12,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new() -> anyhow::Result<Client> {
+    pub async fn new() -> tokio::io::Result<Client> {
         let socket = TcpStream::connect("127.0.0.1:24224").await?;
         let (sender, receiver) = channel::unbounded();
 
@@ -25,7 +24,11 @@ impl Client {
         Ok(Client { sender })
     }
 
-    pub fn send(&self, tag: &'static str, entry: HashMap<String, String>) -> anyhow::Result<()> {
+    pub fn send(
+        &self,
+        tag: &'static str,
+        entry: HashMap<String, String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let record = Record {
             tag,
             entry,
@@ -33,13 +36,12 @@ impl Client {
                 .duration_since(SystemTime::UNIX_EPOCH)?
                 .as_secs(),
         };
-        self.sender
-            .send(Message::Record(record))
-            .map_err(|e| anyhow!(e))
+        self.sender.send(Message::Record(record))?;
+        Ok(())
     }
 
-    pub async fn stop(&self) -> anyhow::Result<()> {
-        self.sender.send(Message::Terminate).map_err(|e| anyhow!(e))
+    pub async fn stop(&self) -> Result<(), channel::SendError<Message>> {
+        self.sender.send(Message::Terminate)
     }
 }
 

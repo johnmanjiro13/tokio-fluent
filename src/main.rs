@@ -5,7 +5,7 @@ use std::time::Duration;
 use fluentd_client_rs::client::Client;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> tokio::io::Result<()> {
     let client = Client::new().await?;
     let mut map = HashMap::new();
     map.insert("Key".to_string(), "Value".to_string());
