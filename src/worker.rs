@@ -1,4 +1,5 @@
 use crossbeam::channel::{self, Receiver};
+use log::warn;
 use rmp_serde::Serializer;
 use serde::Serialize;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
@@ -25,9 +26,14 @@ impl Worker {
             match self.receiver.try_recv() {
                 Ok(Message::Record(record)) => {
                     let mut buf = Vec::new();
-                    // TODO: Print a log when an error is occurred.
-                    record.serialize(&mut Serializer::new(&mut buf)).unwrap();
-                    self.conn.write_all(&buf).await.unwrap();
+                    match record.serialize(&mut Serializer::new(&mut buf)) {
+                        Ok(_) => (),
+                        Err(e) => warn!("failed to serialize a message: {}", e),
+                    }
+                    match self.conn.write_all(&buf).await {
+                        Ok(_) => (),
+                        Err(e) => warn!("failed to send a message to the fluent server: {}", e),
+                    }
                 }
                 Err(channel::TryRecvError::Empty) => continue,
                 Ok(Message::Terminate) | Err(channel::TryRecvError::Disconnected) => break,
