@@ -4,7 +4,7 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::fluent::Map;
+use crate::entry::Map;
 
 #[derive(Debug, Serialize)]
 pub struct Record {

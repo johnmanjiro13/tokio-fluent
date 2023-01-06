@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::thread;
 
-use fluentokio::client::Client;
-use fluentokio::fluent::{Map, Value};
+use tokio_fluent::client::Client;
+use tokio_fluent::entry::{Map, Value};
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
@@ -11,7 +11,7 @@ async fn main() -> tokio::io::Result<()> {
     let mut m = HashMap::new();
     m.insert("Key".to_string(), "Value".into());
     m.insert("foo".to_string(), "bar".into());
-    let mut map = Map::new_with_values(m);
+    let mut map = Map::new_with(m);
 
     let mut map2 = Map::new();
     let v = vec![20, 20];
