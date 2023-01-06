@@ -4,7 +4,14 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::record::Record;
+use crate::fluent::Map;
+
+#[derive(Debug, Serialize)]
+pub struct Record {
+    pub tag: &'static str,
+    pub timestamp: u64,
+    pub entry: Map,
+}
 
 pub enum Message {
     Record(Record),
@@ -18,7 +25,7 @@ pub struct Worker {
 
 impl Worker {
     pub fn new(conn: TcpStream, receiver: Receiver<Message>) -> Self {
-        Worker { conn, receiver }
+        Self { conn, receiver }
     }
 
     pub async fn run(&mut self) {

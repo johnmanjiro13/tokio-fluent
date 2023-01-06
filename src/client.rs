@@ -1,12 +1,12 @@
-use std::collections::HashMap;
 use std::time::SystemTime;
 
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
 
-use crate::record::Record;
-use crate::worker::{Message, Worker};
+use crate::fluent::Map;
+use crate::worker::{Message, Record, Worker};
 
+#[derive(Debug, Clone)]
 pub struct Client {
     sender: Sender<Message>,
 }
@@ -21,14 +21,10 @@ impl Client {
             worker.run().await
         });
 
-        Ok(Client { sender })
+        Ok(Self { sender })
     }
 
-    pub fn send(
-        &self,
-        tag: &'static str,
-        entry: HashMap<String, String>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>> {
         let record = Record {
             tag,
             entry,
