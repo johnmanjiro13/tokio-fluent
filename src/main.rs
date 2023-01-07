@@ -3,6 +3,7 @@ use std::thread;
 
 use tokio_fluent::client::{Client, Config};
 use tokio_fluent::entry::{Map, Value};
+use tokio_fluent::entry_map;
 
 #[tokio::main]
 async fn main() -> tokio::io::Result<()> {
@@ -10,6 +11,22 @@ async fn main() -> tokio::io::Result<()> {
         addr: "127.0.0.1:24224".parse().unwrap(),
     })
     .await?;
+
+    // let m = map!("key".to_string() => "value".into(), "foo".to_string() => "bar".into());
+    let mm = entry_map!(
+        "key".to_string() => "value".into(),
+        "foo".to_string() => "bar".into(),
+        "hoge".to_string() => "fuga".into(),
+        "ids".to_string() => [10, 20].into_iter().map(|e| e.into()).collect::<Vec<_>>().into()
+    );
+    assert_eq!(mm["key"], Value::from("value"));
+    assert_eq!(
+        mm["ids"],
+        Value::from([10, 20].into_iter().map(|e| e.into()).collect::<Vec<_>>())
+    );
+
+    println!("{:?}", mm);
+    client.send("fluent.test", mm).unwrap();
 
     let mut m = HashMap::new();
     m.insert("Key".to_string(), "Value".into());

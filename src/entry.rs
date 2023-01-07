@@ -34,7 +34,7 @@ use std::collections::HashMap;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 /// HashMap object for fluent record.
 pub struct Map(HashMap<String, Value>);
 
@@ -44,13 +44,43 @@ impl Map {
         Self(HashMap::new())
     }
 
-    /// Create an Map object with existed key-values.
+    /// Create an Map object with existed key-values
     pub fn new_with(map: HashMap<String, Value>) -> Self {
         let mut m = HashMap::new();
         for (k, v) in map.into_iter() {
             m.insert(k, v);
         }
         Self(m)
+    }
+}
+
+#[macro_export]
+/// Create a Map object from a list of key-value pairs.
+///
+/// ## Example
+///
+/// ```rust
+/// use tokio_fluent::map;
+/// use tokio_fluent::Value;
+///
+/// let map = entry_map!(
+///     "name".to_string() => "John".into(),
+///     "age".to_string() => 22.into(),
+///     "scores".to_string() => [70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
+/// );
+/// assert_eq!(map["name"], Value::from("John"));
+/// assert_eq!(map["age"], Value::from(22));
+/// assert_eq!(map["scores"], Value::from([70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>()));
+/// ```
+macro_rules! entry_map {
+    ($($key:expr => $field:expr),*) => {
+        {
+            let mut map: HashMap<String, Value> = HashMap::new();
+            $(
+                map.insert($key, $field);
+            )+
+            Map::new_with(map)
+        }
     }
 }
 
@@ -80,7 +110,7 @@ impl core::ops::DerefMut for Map {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 /// Value object for HashMap of a fluentd record.
 pub enum Value {
     /// Boolean
