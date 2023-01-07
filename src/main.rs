@@ -17,7 +17,7 @@ async fn main() -> tokio::io::Result<()> {
         "key".to_string() => "value".into(),
         "foo".to_string() => "bar".into(),
         "hoge".to_string() => "fuga".into(),
-        "ids".to_string() => [10, 20].into_iter().map(|e| e.into()).collect::<Vec<_>>().into()
+        "ids".to_string() => [10, 20].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
     );
     assert_eq!(mm["key"], Value::from("value"));
     assert_eq!(

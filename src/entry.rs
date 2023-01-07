@@ -60,8 +60,10 @@ impl Map {
 /// ## Example
 ///
 /// ```rust
-/// use tokio_fluent::map;
-/// use tokio_fluent::Value;
+/// use std::collections::HashMap;
+///
+/// use tokio_fluent::entry_map;
+/// use tokio_fluent::entry::{Map, Value};
 ///
 /// let map = entry_map!(
 ///     "name".to_string() => "John".into(),
@@ -73,6 +75,7 @@ impl Map {
 /// assert_eq!(map["scores"], Value::from([70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>()));
 /// ```
 macro_rules! entry_map {
+    ($($key:expr => $field:expr,)+) => { entry_map!($($key => $field),+) };
     ($($key:expr => $field:expr),*) => {
         {
             let mut map: HashMap<String, Value> = HashMap::new();
@@ -81,7 +84,7 @@ macro_rules! entry_map {
             )+
             Map::new_with(map)
         }
-    }
+    };
 }
 
 impl Default for Map {
@@ -242,5 +245,32 @@ impl Serialize for Value {
                 seq.end()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_entry_map() {
+        let got = entry_map!(
+            "name".to_string() => "John".into(),
+            "age".to_string() => 22.into(),
+            "scores".to_string() => [70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
+        );
+
+        let mut want = Map::new();
+        want.insert("name".to_string(), "John".into());
+        want.insert("age".to_string(), 22.into());
+        want.insert(
+            "scores".to_string(),
+            [70, 80]
+                .into_iter()
+                .map(|e| e.into())
+                .collect::<Vec<_>>()
+                .into(),
+        );
+        assert_eq!(got, want);
     }
 }

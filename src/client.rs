@@ -2,14 +2,17 @@
 //!
 //! ## Example
 //!
-//! ```rust
-//! use tokio_fluent::client::Client;
+//! ```no_run
+//! use tokio_fluent::client::{Client,Config};
 //! use tokio_fluent::entry::{Map, Value};
 //!
-//! let client = Client.new().await.unwrap();
-//! let mut map = Map::new();
-//! map.insert("age".to_string(), 10.into());
-//! client.send("fluent.test", map).unwrap();
+//! #[tokio::main]
+//! async fn main() {
+//!     let client = Client::new(&Config { addr: "127.0.0.1:24224".parse().unwrap() }).await.unwrap();
+//!     let mut map = Map::new();
+//!     map.insert("age".to_string(), 10.into());
+//!     client.send("fluent.test", map).unwrap();
+//! }
 //! ```
 
 use std::net::SocketAddr;
