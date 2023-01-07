@@ -41,7 +41,7 @@ impl Default for Config {
 }
 
 #[async_trait]
-pub trait FluentClient {
+pub trait FluentClient: Send + Sync {
     fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>>;
     async fn stop(self) -> Result<(), channel::SendError<Message>>;
 }
