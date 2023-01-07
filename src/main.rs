@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::thread;
 
-use tokio_fluent::client::{Client, Config};
+use tokio_fluent::client::{Client, Config, FluentClient};
 use tokio_fluent::entry::{Map, Value};
 use tokio_fluent::entry_map;
 

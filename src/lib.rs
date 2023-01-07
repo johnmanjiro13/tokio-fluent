@@ -6,7 +6,7 @@
 //! use std::collections::HashMap;
 //!
 //! use tokio_fluent::entry_map;
-//! use tokio_fluent::client::{Client, Config};
+//! use tokio_fluent::client::{Client, Config, FluentClient};
 //! use tokio_fluent::entry::{Map, Value};
 //!
 //! #[tokio::main]

@@ -6,6 +6,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = "0.1.61"
 crossbeam = "0.8.2"
 log = "0.4.17"
 rmp-serde = "1.1.1"

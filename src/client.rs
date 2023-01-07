@@ -3,7 +3,7 @@
 //! ## Example
 //!
 //! ```no_run
-//! use tokio_fluent::client::{Client,Config};
+//! use tokio_fluent::client::{Client, Config, FluentClient};
 //! use tokio_fluent::entry::{Map, Value};
 //!
 //! #[tokio::main]
@@ -18,6 +18,7 @@
 use std::net::SocketAddr;
 use std::time::SystemTime;
 
+use async_trait::async_trait;
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
 
@@ -39,6 +40,12 @@ impl Default for Config {
     }
 }
 
+#[async_trait]
+pub trait FluentClient {
+    fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>>;
+    async fn stop(self) -> Result<(), channel::SendError<Message>>;
+}
+
 #[derive(Debug, Clone)]
 /// A fluentd client.
 pub struct Client {
@@ -58,14 +65,17 @@ impl Client {
 
         Ok(Self { sender })
     }
+}
 
+#[async_trait]
+impl FluentClient for Client {
     /// Send a fluent record to the fluentd server.
     ///
     /// ## Params:
     /// `tag` - Event category of a record to send.
     ///
     /// `entry` - Map object to send as a fluent record.
-    pub fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>> {
+    fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>> {
         let record = Record {
             tag,
             entry,
@@ -78,7 +88,7 @@ impl Client {
     }
 
     /// Stop the worker.
-    pub async fn stop(self) -> Result<(), channel::SendError<Message>> {
+    async fn stop(self) -> Result<(), channel::SendError<Message>> {
         self.sender.send(Message::Terminate)
     }
 }
@@ -87,5 +97,20 @@ impl Client {
 impl Drop for Client {
     fn drop(&mut self) {
         let _ = self.sender.send(Message::Terminate);
+    }
+}
+
+#[derive(Debug, Clone)]
+/// NopClient does nothing.
+pub struct NopClient;
+
+#[async_trait]
+impl FluentClient for NopClient {
+    fn send(&self, _tag: &'static str, _entry: Map) -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
+    }
+
+    async fn stop(self) -> Result<(), channel::SendError<Message>> {
+        Ok(())
     }
 }
