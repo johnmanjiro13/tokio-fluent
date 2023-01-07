@@ -140,7 +140,7 @@ impl From<bool> for Value {
 
 impl From<i32> for Value {
     fn from(value: i32) -> Self {
-        Self::Int(value.into())
+        Self::Int(value as _)
     }
 }
 
@@ -150,9 +150,27 @@ impl From<i64> for Value {
     }
 }
 
+impl From<isize> for Value {
+    fn from(value: isize) -> Self {
+        Self::Int(value as _)
+    }
+}
+
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Self::Uint(value as _)
+    }
+}
+
 impl From<u64> for Value {
     fn from(value: u64) -> Self {
         Self::Uint(value)
+    }
+}
+
+impl From<usize> for Value {
+    fn from(value: usize) -> Self {
+        Self::Uint(value as _)
     }
 }
 
