@@ -4,13 +4,13 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::entry::Map;
+use crate::record::Map;
 
 #[derive(Debug, Serialize)]
 pub struct Record {
     pub tag: &'static str,
     pub timestamp: u64,
-    pub entry: Map,
+    pub record: Map,
 }
 
 pub enum Message {

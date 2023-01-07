@@ -12,9 +12,9 @@ A [fluentd](https://www.fluentd.org/) client using tokio.
 ```rust
 use std::collections::HashMap;
 
-use tokio_fluent::client::{Client, Config};
-use tokio_fluent::entry::{Map, Value};
-use tokio_fluent::entry_map;
+use tokio_fluent::client::{Client, Config, FluentClient};
+use tokio_fluent::record::{Map, Value};
+use tokio_fluent::record_map;
 
 #[tokio::main]
 async fn main() {
@@ -33,8 +33,8 @@ async fn main() {
     );
     client.send("fluent.test", map).unwrap();
 
-    // With entry_map! macro
-    let mut map_from_macro = entry_map!(
+    // With record_map! macro
+    let map_from_macro = record_map!(
         "age".to_string() => 22.into(),
         "scores".to_string() => [80, 90].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
     );

@@ -4,7 +4,7 @@
 //!
 //! ```no_run
 //! use tokio_fluent::client::{Client, Config, FluentClient};
-//! use tokio_fluent::entry::{Map, Value};
+//! use tokio_fluent::record::{Map, Value};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -22,7 +22,7 @@ use async_trait::async_trait;
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
 
-use crate::entry::Map;
+use crate::record::Map;
 use crate::worker::{Message, Record, Worker};
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ impl Default for Config {
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>>;
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Box<dyn std::error::Error>>;
     async fn stop(self) -> Result<(), channel::SendError<Message>>;
 }
 
@@ -74,11 +74,11 @@ impl FluentClient for Client {
     /// ## Params:
     /// `tag` - Event category of a record to send.
     ///
-    /// `entry` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, entry: Map) -> Result<(), Box<dyn std::error::Error>> {
+    /// `record` - Map object to send as a fluent record.
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Box<dyn std::error::Error>> {
         let record = Record {
             tag,
-            entry,
+            record,
             timestamp: SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)?
                 .as_secs(),
@@ -106,7 +106,7 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _entry: Map) -> Result<(), Box<dyn std::error::Error>> {
+    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 

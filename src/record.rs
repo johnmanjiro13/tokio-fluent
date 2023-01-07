@@ -1,4 +1,4 @@
-//!Fluentd entry definitions.
+//!Fluentd record definitions.
 
 // This code is inspired by [tracing-fluentd](https://github.com/DoumanAsh/tracing-fluentd)
 //
@@ -62,10 +62,10 @@ impl Map {
 /// ```rust
 /// use std::collections::HashMap;
 ///
-/// use tokio_fluent::entry_map;
-/// use tokio_fluent::entry::{Map, Value};
+/// use tokio_fluent::record_map;
+/// use tokio_fluent::record::{Map, Value};
 ///
-/// let map = entry_map!(
+/// let map = record_map!(
 ///     "name".to_string() => "John".into(),
 ///     "age".to_string() => 22.into(),
 ///     "scores".to_string() => [70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
@@ -74,8 +74,8 @@ impl Map {
 /// assert_eq!(map["age"], Value::from(22));
 /// assert_eq!(map["scores"], Value::from([70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>()));
 /// ```
-macro_rules! entry_map {
-    ($($key:expr => $field:expr,)+) => { entry_map!($($key => $field),+) };
+macro_rules! record_map {
+    ($($key:expr => $field:expr,)+) => { record_map!($($key => $field),+) };
     ($($key:expr => $field:expr),*) => {
         {
             let mut map: HashMap<String, Value> = HashMap::new();
@@ -271,8 +271,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_entry_map() {
-        let got = entry_map!(
+    fn test_record_map() {
+        let got = record_map!(
             "name".to_string() => "John".into(),
             "age".to_string() => 22.into(),
             "scores".to_string() => [70, 80].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
