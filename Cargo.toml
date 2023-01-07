@@ -1,6 +1,6 @@
 [package]
 name = "tokio-fluent"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["johnmanjiro13"]
 edition = "2021"
 description = "A fluentd client using tokio"
