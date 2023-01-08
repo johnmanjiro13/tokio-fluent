@@ -35,11 +35,17 @@ impl Worker {
                     let mut buf = Vec::new();
                     match record.serialize(&mut Serializer::new(&mut buf)) {
                         Ok(_) => (),
-                        Err(e) => warn!("failed to serialize a message: {}", e),
+                        Err(e) => {
+                            warn!("failed to serialize a message: {}", e);
+                            continue;
+                        }
                     }
                     match self.conn.write_all(&buf).await {
                         Ok(_) => (),
-                        Err(e) => warn!("failed to send a message to the fluent server: {}", e),
+                        Err(e) => {
+                            warn!("failed to send a message to the fluent server: {}", e);
+                            continue;
+                        }
                     }
                 }
                 Err(channel::TryRecvError::Empty) => continue,
