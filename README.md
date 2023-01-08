@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/tokio-fluent.svg)](https://crates.io/crates/tokio-fluent)
 [![Documentation](https://docs.rs/tokio-fluent/badge.svg)](https://docs.rs/crate/tokio-fluent/)
-[![CI](https://github.com/johnmanjiro13/tokio-fluent/workflows/test/badge.svg)](https://github.com/johnmanjiro13/tokio-fluent/actions?query=workflow%3Atest)
+[![CI](https://github.com/johnmanjiro13/tokio-fluent/workflows/test/badge.svg?branch%3Amain)](https://github.com/johnmanjiro13/tokio-fluent/actions?query=workflow%3Atest%20branch%3Amain)
 
 
 A [fluentd](https://www.fluentd.org/) client using tokio.
