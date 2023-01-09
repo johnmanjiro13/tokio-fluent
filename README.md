@@ -27,7 +27,12 @@ use tokio_fluent::record_map;
 
 #[tokio::main]
 async fn main() {
-    let client = Client::new(&Config { addr: "127.0.0.1:24224".parse().unwrap() }).await.unwrap();
+    let client = Client::new(&Config {
+        addr: "127.0.0.1:24224".parse().unwrap(),
+        ..Default::default()
+    })
+    .await
+    .unwrap();
 
     // With Map::new()
     let mut map = Map::new();
@@ -56,6 +61,7 @@ async fn main() {
 ```rust
 let client = Client::new(&Config {
         addr: "127.0.0.1:24224".parse().unwrap(),
+        ..Default::default()
     })
     .await
     .unwrap();
