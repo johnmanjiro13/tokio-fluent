@@ -18,8 +18,12 @@ include = [
 
 [dependencies]
 async-trait = "0.1.61"
+base64 = "0.21.0"
 crossbeam = "0.8.2"
 log = "0.4.17"
 rmp-serde = "1.1.1"
 serde = {version = "1.0.152", features = ["derive"]}
+# TODO: Remove unneeded features
 tokio = {version = "1.23.0", features = ["full"]}
+tokio-retry = "0.3.0"
+uuid = { version = "1.2.2", features = ["v4"] }

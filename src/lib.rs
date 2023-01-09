@@ -32,5 +32,6 @@
 //! ```
 
 pub mod client;
+mod error;
 pub mod record;
 mod worker;

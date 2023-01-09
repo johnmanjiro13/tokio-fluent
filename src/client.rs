@@ -22,23 +22,36 @@
 //! ```
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
+use base64::{engine::general_purpose, Engine};
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 use tokio::time::timeout;
+use uuid::Uuid;
 
+use crate::error::Error;
 use crate::record::Map;
-use crate::worker::{Message, Record, Worker};
+use crate::worker::{Message, Options, Record, RetryConfig, Worker};
 
 #[derive(Debug, Clone)]
 /// Config for a client.
 pub struct Config {
     /// The address of the fluentd server.
+    /// The default is `127.0.0.1:24224`.
     pub addr: SocketAddr,
     /// The timeout value to connect to the fluentd server.
+    /// The default is 3 seconds.
     pub timeout: Duration,
+    /// The duration of the initial wait for the first retry, in milliseconds.
+    /// The default is 500.
+    pub retry_wait: u64,
+    /// The maximum number of retries. If the number of retries become larger
+    /// than this value, the write/send operation will fail. The default is 13.
+    pub max_retry: usize,
 }
 
 impl Default for Config {
@@ -46,14 +59,16 @@ impl Default for Config {
         Self {
             addr: "127.0.0.1:24224".parse().unwrap(),
             timeout: Duration::new(3, 0),
+            retry_wait: 500,
+            max_retry: 13,
         }
     }
 }
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), Box<dyn std::error::Error>>;
-    async fn stop(self) -> Result<(), channel::SendError<Message>>;
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error>;
+    async fn stop(self) -> Result<(), Error>;
 }
 
 #[derive(Debug, Clone)]
@@ -68,8 +83,16 @@ impl Client {
         let socket = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
         let (sender, receiver) = channel::unbounded();
 
+        let config = config.clone();
         let _ = tokio::spawn(async move {
-            let mut worker = Worker::new(socket, receiver);
+            let worker = Worker::new(
+                Arc::new(Mutex::new(socket)),
+                receiver,
+                RetryConfig {
+                    initial_wait: config.retry_wait,
+                    max: config.max_retry,
+                },
+            );
             worker.run().await
         });
 
@@ -85,21 +108,29 @@ impl FluentClient for Client {
     /// `tag` - Event category of a record to send.
     ///
     /// `record` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), Box<dyn std::error::Error>> {
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error> {
         let record = Record {
             tag,
             record,
             timestamp: SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)?
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .map_err(|e| Error::DeriveError(e.to_string()))?
                 .as_secs(),
+            options: Options {
+                chunk: general_purpose::STANDARD.encode(Uuid::new_v4().to_string()),
+            },
         };
-        self.sender.send(Message::Record(record))?;
+        self.sender
+            .send(Message::Record(record))
+            .map_err(|e| Error::SendError(e.to_string()))?;
         Ok(())
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), channel::SendError<Message>> {
-        self.sender.send(Message::Terminate)
+    async fn stop(self) -> Result<(), Error> {
+        self.sender
+            .send(Message::Terminate)
+            .map_err(|e| Error::SendError(e.to_string()))
     }
 }
 
@@ -116,11 +147,11 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), Box<dyn std::error::Error>> {
+    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), Error> {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), channel::SendError<Message>> {
+    async fn stop(self) -> Result<(), Error> {
         Ok(())
     }
 }
