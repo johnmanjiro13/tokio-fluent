@@ -3,7 +3,7 @@
 //! ## Example
 //!
 //! ```no_run
-//! use tokio_fluent::client::{Client, Config, FluentClient};
+//! use tokio_fluent::{Client, Config, FluentClient};
 //! use tokio_fluent::record::{Map, Value};
 //!
 //! #[tokio::main]
@@ -76,7 +76,7 @@ impl Default for Config {
             addr: "127.0.0.1:24224".parse().unwrap(),
             timeout: Duration::new(3, 0),
             retry_wait: 500,
-            max_retry: 13,
+            max_retry: 5,
         }
     }
 }

@@ -21,7 +21,7 @@ tokio-fluent = "0.2.1"
 ```rust
 use std::collections::HashMap;
 
-use tokio_fluent::client::{Client, Config, FluentClient};
+use tokio_fluent::{Client, Config, FluentClient};
 use tokio_fluent::record::{Map, Value};
 use tokio_fluent::record_map;
 
@@ -80,4 +80,4 @@ The default is 500.
 ### MaxRetry
 
 Sets the maximum number of retries.
-If the number of retries become larger than this value, the write/send operation will fail. The default is 13.
+If the number of retries become larger than this value, the write/send operation will fail. The default is 5.
