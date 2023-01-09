@@ -80,13 +80,13 @@ pub struct Client {
 impl Client {
     /// Connect to the fluentd server and create a worker with tokio::spawn.
     pub async fn new(config: &Config) -> tokio::io::Result<Client> {
-        let socket = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
+        let stream = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
         let (sender, receiver) = channel::unbounded();
 
         let config = config.clone();
         let _ = tokio::spawn(async move {
             let worker = Worker::new(
-                Arc::new(Mutex::new(socket)),
+                Arc::new(Mutex::new(stream)),
                 receiver,
                 RetryConfig {
                     initial_wait: config.retry_wait,

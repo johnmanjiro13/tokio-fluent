@@ -53,19 +53,19 @@ pub struct RetryConfig {
 }
 
 pub struct Worker {
-    conn: Arc<Mutex<TcpStream>>,
+    stream: Arc<Mutex<TcpStream>>,
     receiver: Receiver<Message>,
     retry_config: RetryConfig,
 }
 
 impl Worker {
     pub fn new(
-        conn: Arc<Mutex<TcpStream>>,
+        stream: Arc<Mutex<TcpStream>>,
         receiver: Receiver<Message>,
         retry_config: RetryConfig,
     ) -> Self {
         Self {
-            conn,
+            stream,
             receiver,
             retry_config,
         }
@@ -106,14 +106,15 @@ impl Worker {
     }
 
     async fn send(&self, src: &[u8], chunk: String) -> Result<(), Error> {
-        let conn = self.conn.clone();
-        let mut conn = conn.lock().await;
-        conn.write_all(src)
+        let stream = self.stream.clone();
+        let mut stream = stream.lock().await;
+        stream
+            .write_all(src)
             .await
             .map_err(|e| Error::DeriveError(e.to_string()))?;
 
         let mut buf = vec![0; 128];
-        let n = conn
+        let n = stream
             .read(&mut buf)
             .await
             .map_err(|e| Error::DeriveError(e.to_string()))?;
