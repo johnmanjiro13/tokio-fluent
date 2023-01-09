@@ -38,5 +38,19 @@ async fn main() {
         "age".to_string() => 22.into(),
         "scores".to_string() => [80, 90].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
     );
-}
+    client.send("fluent.test", map_from_macro).unwrap();
 ```
+
+## Setting config values
+
+```rust
+let client = Client::new(&Config {
+        addr: "127.0.0.1:24224".parse().unwrap(),
+    })
+    .await
+    .unwrap();
+```
+
+### Timeout
+
+Set the timeout value of `std::time::Duration` to connect to the destination. The default is 3 seconds.
