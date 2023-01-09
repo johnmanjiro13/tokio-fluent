@@ -5,7 +5,16 @@
 [![CI](https://github.com/johnmanjiro13/tokio-fluent/workflows/test/badge.svg?branch%3Amain)](https://github.com/johnmanjiro13/tokio-fluent/actions?query=workflow%3Atest%20branch%3Amain)
 
 
-A [fluentd](https://www.fluentd.org/) client using tokio.
+A [fluentd](https://www.fluentd.org/) client using [tokio](https://tokio.rs/).
+
+## Installation
+
+Add this to your `Cargo.toml`
+
+```toml
+[dependencies]
+tokio-fluent = "0.2.1"
+```
 
 ## Example
 
@@ -39,6 +48,7 @@ async fn main() {
         "scores".to_string() => [80, 90].into_iter().map(|e| e.into()).collect::<Vec<_>>().into(),
     );
     client.send("fluent.test", map_from_macro).unwrap();
+}
 ```
 
 ## Setting config values
