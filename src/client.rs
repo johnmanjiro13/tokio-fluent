@@ -8,7 +8,13 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let client = Client::new(&Config { addr: "127.0.0.1:24224".parse().unwrap() }).await.unwrap();
+//!     let client = Client::new(&Config {
+//!         addr: "127.0.0.1:24224".parse().unwrap(),
+//!         ..Default::default()
+//!     })
+//!     .await
+//!     .unwrap();
+//!
 //!     let mut map = Map::new();
 //!     map.insert("age".to_string(), 10.into());
 //!     client.send("fluent.test", map).unwrap();
