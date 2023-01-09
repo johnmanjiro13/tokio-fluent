@@ -1,18 +1,36 @@
+use std::fmt;
+
 #[derive(Debug)]
-pub enum Error {
+pub enum ClientError {
     DeriveError(String),
     SendError(String),
-    UnmatchedError(String, String),
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for ClientError {}
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ClientError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match *self {
-            Error::DeriveError(ref e) => e,
-            Error::SendError(ref e) => e,
-            Error::UnmatchedError(_, _) => "request chunk and response ack did not match",
+            ClientError::DeriveError(ref e) => e,
+            ClientError::SendError(ref e) => e,
+        };
+        write!(f, "{}", s)
+    }
+}
+
+#[derive(Debug)]
+pub enum WorkerError {
+    DeriveError(String),
+    AckUnmatchedError(String, String),
+}
+
+impl std::error::Error for WorkerError {}
+
+impl fmt::Display for WorkerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match *self {
+            WorkerError::DeriveError(ref e) => e,
+            WorkerError::AckUnmatchedError(_, _) => "request chunk and response ack did not match",
         };
         write!(f, "{}", s)
     }

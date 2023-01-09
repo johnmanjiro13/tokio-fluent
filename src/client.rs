@@ -28,12 +28,10 @@ use std::time::{Duration, SystemTime};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine};
 use crossbeam::channel::{self, Sender};
-use tokio::net::TcpStream;
-use tokio::sync::Mutex;
-use tokio::time::timeout;
+use tokio::{net::TcpStream, sync::Mutex, time::timeout};
 use uuid::Uuid;
 
-use crate::error::Error;
+use crate::error::ClientError;
 use crate::record::Map;
 use crate::worker::{Message, Options, Record, RetryConfig, Worker};
 
@@ -67,8 +65,8 @@ impl Default for Config {
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error>;
-    async fn stop(self) -> Result<(), Error>;
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), ClientError>;
+    async fn stop(self) -> Result<(), ClientError>;
 }
 
 #[derive(Debug, Clone)]
@@ -108,13 +106,13 @@ impl FluentClient for Client {
     /// `tag` - Event category of a record to send.
     ///
     /// `record` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error> {
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), ClientError> {
         let record = Record {
             tag,
             record,
             timestamp: SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
-                .map_err(|e| Error::DeriveError(e.to_string()))?
+                .map_err(|e| ClientError::DeriveError(e.to_string()))?
                 .as_secs(),
             options: Options {
                 chunk: general_purpose::STANDARD.encode(Uuid::new_v4().to_string()),
@@ -122,15 +120,15 @@ impl FluentClient for Client {
         };
         self.sender
             .send(Message::Record(record))
-            .map_err(|e| Error::SendError(e.to_string()))?;
+            .map_err(|e| ClientError::SendError(e.to_string()))?;
         Ok(())
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), Error> {
+    async fn stop(self) -> Result<(), ClientError> {
         self.sender
             .send(Message::Terminate)
-            .map_err(|e| Error::SendError(e.to_string()))
+            .map_err(|e| ClientError::SendError(e.to_string()))
     }
 }
 
@@ -147,11 +145,11 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), Error> {
+    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), ClientError> {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), Error> {
+    async fn stop(self) -> Result<(), ClientError> {
         Ok(())
     }
 }

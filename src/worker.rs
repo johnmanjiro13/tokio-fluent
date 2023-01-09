@@ -11,7 +11,8 @@ use tokio::{
 };
 use tokio_retry::{strategy::ExponentialBackoff, Retry};
 
-use crate::{error::Error, record::Map};
+use crate::error::WorkerError;
+use crate::record::Map;
 
 #[derive(Debug, Serialize)]
 pub struct Record {
@@ -105,21 +106,21 @@ impl Worker {
         }
     }
 
-    async fn send(&self, src: &[u8], chunk: String) -> Result<(), Error> {
+    async fn send(&self, src: &[u8], chunk: String) -> Result<(), WorkerError> {
         let stream = self.stream.clone();
         let mut stream = stream.lock().await;
         stream
             .write_all(src)
             .await
-            .map_err(|e| Error::DeriveError(e.to_string()))?;
+            .map_err(|e| WorkerError::DeriveError(e.to_string()))?;
 
         let mut buf = vec![0; 128];
         let n = stream
             .read(&mut buf)
             .await
-            .map_err(|e| Error::DeriveError(e.to_string()))?;
-        let response: Response =
-            Deserialize::deserialize(&mut Deserializer::new(&buf[0..n])).unwrap();
+            .map_err(|e| WorkerError::DeriveError(e.to_string()))?;
+        let response: Response = Deserialize::deserialize(&mut Deserializer::new(&buf[0..n]))
+            .map_err(|e| WorkerError::DeriveError(e.to_string()))?;
         if response.ack == chunk {
             Ok(())
         } else {
@@ -127,7 +128,7 @@ impl Worker {
                 "ack and chunk did not match. ack: {}, chunk: {}",
                 response.ack, chunk
             );
-            Err(Error::UnmatchedError(response.ack, chunk))
+            Err(WorkerError::AckUnmatchedError(response.ack, chunk))
         }
     }
 }
