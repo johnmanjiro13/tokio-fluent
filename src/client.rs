@@ -31,9 +31,27 @@ use crossbeam::channel::{self, Sender};
 use tokio::{net::TcpStream, sync::Mutex, time::timeout};
 use uuid::Uuid;
 
-use crate::error::ClientError;
 use crate::record::Map;
 use crate::worker::{Message, Options, Record, RetryConfig, Worker};
+
+#[derive(Debug, Clone)]
+/// Error related by client.
+pub enum Error {
+    DeriveError(String),
+    SendError(String),
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match *self {
+            Error::DeriveError(ref e) => e,
+            Error::SendError(ref e) => e,
+        };
+        write!(f, "{}", s)
+    }
+}
 
 #[derive(Debug, Clone)]
 /// Config for a client.
@@ -65,8 +83,8 @@ impl Default for Config {
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), ClientError>;
-    async fn stop(self) -> Result<(), ClientError>;
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error>;
+    async fn stop(self) -> Result<(), Error>;
 }
 
 #[derive(Debug, Clone)]
@@ -106,13 +124,13 @@ impl FluentClient for Client {
     /// `tag` - Event category of a record to send.
     ///
     /// `record` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), ClientError> {
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), Error> {
         let record = Record {
             tag,
             record,
             timestamp: SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
-                .map_err(|e| ClientError::DeriveError(e.to_string()))?
+                .map_err(|e| Error::DeriveError(e.to_string()))?
                 .as_secs(),
             options: Options {
                 chunk: general_purpose::STANDARD.encode(Uuid::new_v4().to_string()),
@@ -120,15 +138,15 @@ impl FluentClient for Client {
         };
         self.sender
             .send(Message::Record(record))
-            .map_err(|e| ClientError::SendError(e.to_string()))?;
+            .map_err(|e| Error::SendError(e.to_string()))?;
         Ok(())
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), ClientError> {
+    async fn stop(self) -> Result<(), Error> {
         self.sender
             .send(Message::Terminate)
-            .map_err(|e| ClientError::SendError(e.to_string()))
+            .map_err(|e| Error::SendError(e.to_string()))
     }
 }
 
@@ -145,11 +163,11 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), ClientError> {
+    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), Error> {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), ClientError> {
+    async fn stop(self) -> Result<(), Error> {
         Ok(())
     }
 }

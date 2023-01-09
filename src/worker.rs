@@ -11,8 +11,25 @@ use tokio::{
 };
 use tokio_retry::{strategy::ExponentialBackoff, Retry};
 
-use crate::error::WorkerError;
 use crate::record::Map;
+
+#[derive(Debug, Clone)]
+pub enum WorkerError {
+    DeriveError(String),
+    AckUnmatchedError(String, String),
+}
+
+impl std::error::Error for WorkerError {}
+
+impl std::fmt::Display for WorkerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match *self {
+            WorkerError::DeriveError(ref e) => e,
+            WorkerError::AckUnmatchedError(_, _) => "request chunk and response ack did not match",
+        };
+        write!(f, "{}", s)
+    }
+}
 
 #[derive(Debug, Serialize)]
 pub struct Record {
