@@ -22,13 +22,12 @@
 //! ```
 
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine};
 use crossbeam::channel::{self, Sender};
-use tokio::{net::TcpStream, sync::Mutex, time::timeout};
+use tokio::{net::TcpStream, time::timeout};
 use uuid::Uuid;
 
 use crate::record::Map;
@@ -67,7 +66,7 @@ pub struct Config {
     pub retry_wait: u64,
     /// The maximum number of retries. If the number of retries become larger
     /// than this value, the write/send operation will fail. The default is 13.
-    pub max_retry: usize,
+    pub max_retry: u32,
 }
 
 impl Default for Config {
@@ -76,7 +75,7 @@ impl Default for Config {
             addr: "127.0.0.1:24224".parse().unwrap(),
             timeout: Duration::new(3, 0),
             retry_wait: 500,
-            max_retry: 5,
+            max_retry: 10,
         }
     }
 }
@@ -101,8 +100,8 @@ impl Client {
 
         let config = config.clone();
         let _ = tokio::spawn(async move {
-            let worker = Worker::new(
-                Arc::new(Mutex::new(stream)),
+            let mut worker = Worker::new(
+                stream,
                 receiver,
                 RetryConfig {
                     initial_wait: config.retry_wait,

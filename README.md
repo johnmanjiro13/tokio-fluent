@@ -80,4 +80,4 @@ The default is 500.
 ### MaxRetry
 
 Sets the maximum number of retries.
-If the number of retries become larger than this value, the write/send operation will fail. The default is 5.
+If the number of retries become larger than this value, the write/send operation will fail. The default is 10.
