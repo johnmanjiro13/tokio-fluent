@@ -8,7 +8,13 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let client = Client::new(&Config { addr: "127.0.0.1:24224".parse().unwrap() }).await.unwrap();
+//!     let client = Client::new(&Config {
+//!         addr: "127.0.0.1:24224".parse().unwrap(),
+//!         ..Default::default()
+//!     })
+//!     .await
+//!     .unwrap();
+//!
 //!     let mut map = Map::new();
 //!     map.insert("age".to_string(), 10.into());
 //!     client.send("fluent.test", map).unwrap();
@@ -16,11 +22,12 @@
 //! ```
 
 use std::net::SocketAddr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
 use crossbeam::channel::{self, Sender};
 use tokio::net::TcpStream;
+use tokio::time::timeout;
 
 use crate::record::Map;
 use crate::worker::{Message, Record, Worker};
@@ -28,14 +35,17 @@ use crate::worker::{Message, Record, Worker};
 #[derive(Debug, Clone)]
 /// Config for a client.
 pub struct Config {
-    /// Address of the fluentd server.
+    /// The address of the fluentd server.
     pub addr: SocketAddr,
+    /// The timeout value to connect to the fluentd server.
+    pub timeout: Duration,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             addr: "127.0.0.1:24224".parse().unwrap(),
+            timeout: Duration::new(3, 0),
         }
     }
 }
@@ -55,7 +65,7 @@ pub struct Client {
 impl Client {
     /// Connect to the fluentd server and create a worker with tokio::spawn.
     pub async fn new(config: &Config) -> tokio::io::Result<Client> {
-        let socket = TcpStream::connect(config.addr).await?;
+        let socket = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
         let (sender, receiver) = channel::unbounded();
 
         let _ = tokio::spawn(async move {
