@@ -83,7 +83,7 @@ impl Default for Config {
 #[async_trait]
 pub trait FluentClient: Send + Sync {
     fn send(&self, tag: &'static str, record: Map) -> Result<(), Error>;
-    async fn stop(self) -> Result<(), Error>;
+    async fn stop(self) -> Result<(), channel::SendError<Message>>;
 }
 
 #[derive(Debug, Clone)]
@@ -142,10 +142,8 @@ impl FluentClient for Client {
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), Error> {
-        self.sender
-            .send(Message::Terminate)
-            .map_err(|e| Error::SendError(e.to_string()))
+    async fn stop(self) -> Result<(), channel::SendError<Message>> {
+        self.sender.send(Message::Terminate)
     }
 }
 
@@ -166,7 +164,7 @@ impl FluentClient for NopClient {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), Error> {
+    async fn stop(self) -> Result<(), channel::SendError<Message>> {
         Ok(())
     }
 }

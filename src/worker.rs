@@ -154,10 +154,7 @@ impl Worker {
             .await
             .map_err(|e| Error::WriteFailed(e.to_string()))?;
 
-        let received_ack = self
-            .read_ack()
-            .await
-            .map_err(|e| Error::ReadFailed(e.to_string()))?;
+        let received_ack = self.read_ack().await?;
 
         if received_ack.ack != record.chunk {
             warn!(
@@ -170,7 +167,7 @@ impl Worker {
     }
 
     async fn read_ack(&mut self) -> Result<AckResponse, Error> {
-        let mut buf = bytes::BytesMut::new();
+        let mut buf = bytes::BytesMut::with_capacity(64);
         loop {
             if let Ok(ack) = rmp_serde::from_slice::<AckResponse>(&buf) {
                 return Ok(ack);

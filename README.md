@@ -71,13 +71,13 @@ let client = Client::new(&Config {
 
 Set the timeout value of `std::time::Duration` to connect to the destination. The default is 3 seconds.
 
-### RetryWait
+### retry_wait
 
 Set the duration of the initial wait for the first retry, in milliseconds.
-The actual retry will be exponential backoff by [tokio-retry](https://crates.io/crates/tokio-retry).
+The actual retry wait will be r * 1.5^(N-1) (r: this value, N: the number of retries). 
 The default is 500.
 
-### MaxRetry
+### max_retry
 
 Sets the maximum number of retries.
 If the number of retries become larger than this value, the write/send operation will fail. The default is 10.
