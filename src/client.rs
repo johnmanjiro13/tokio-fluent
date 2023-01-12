@@ -34,6 +34,19 @@ use crate::record::Map;
 use crate::worker::{Message, Options, Record, RetryConfig, Worker};
 
 #[derive(Debug, Clone)]
+pub struct SendError {
+    source: String,
+}
+
+impl std::error::Error for SendError {}
+
+impl std::fmt::Display for SendError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
+#[derive(Debug, Clone)]
 /// Config for a client.
 pub struct Config {
     /// The address of the fluentd server.
@@ -68,8 +81,8 @@ impl Default for Config {
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), channel::SendError<Message>>;
-    async fn stop(self) -> Result<(), channel::SendError<Message>>;
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), SendError>;
+    async fn stop(self) -> Result<(), SendError>;
 }
 
 #[derive(Debug, Clone)]
@@ -110,7 +123,7 @@ impl FluentClient for Client {
     /// `tag` - Event category of a record to send.
     ///
     /// `record` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), channel::SendError<Message>> {
+    fn send(&self, tag: &'static str, record: Map) -> Result<(), SendError> {
         let record = Record {
             tag,
             record,
@@ -122,12 +135,18 @@ impl FluentClient for Client {
                 chunk: general_purpose::STANDARD.encode(Uuid::new_v4()),
             },
         };
-        self.sender.send(Message::Record(record))
+        self.sender
+            .send(Message::Record(record))
+            .map_err(|e| SendError {
+                source: e.to_string(),
+            })
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), channel::SendError<Message>> {
-        self.sender.send(Message::Terminate)
+    async fn stop(self) -> Result<(), SendError> {
+        self.sender.send(Message::Terminate).map_err(|e| SendError {
+            source: e.to_string(),
+        })
     }
 }
 
@@ -144,11 +163,11 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), channel::SendError<Message>> {
+    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), SendError> {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), channel::SendError<Message>> {
+    async fn stop(self) -> Result<(), SendError> {
         Ok(())
     }
 }
