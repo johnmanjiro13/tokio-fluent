@@ -22,7 +22,7 @@
 //! ```
 
 use std::net::SocketAddr;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine};
@@ -113,6 +113,27 @@ impl Client {
 
         Ok(Self { sender })
     }
+
+    fn send_with_time(
+        &self,
+        tag: &'static str,
+        record: Map,
+        timestamp: i64,
+    ) -> Result<(), SendError> {
+        let record = Record {
+            tag,
+            record,
+            timestamp,
+            options: Options {
+                chunk: general_purpose::STANDARD.encode(Uuid::new_v4()),
+            },
+        };
+        self.sender
+            .send(Message::Record(record))
+            .map_err(|e| SendError {
+                source: e.to_string(),
+            })
+    }
 }
 
 #[async_trait]
@@ -124,22 +145,7 @@ impl FluentClient for Client {
     ///
     /// `record` - Map object to send as a fluent record.
     fn send(&self, tag: &'static str, record: Map) -> Result<(), SendError> {
-        let record = Record {
-            tag,
-            record,
-            timestamp: SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-            options: Options {
-                chunk: general_purpose::STANDARD.encode(Uuid::new_v4()),
-            },
-        };
-        self.sender
-            .send(Message::Record(record))
-            .map_err(|e| SendError {
-                source: e.to_string(),
-            })
+        self.send_with_time(tag, record, chrono::Local::now().timestamp())
     }
 
     /// Stop the worker.
@@ -169,5 +175,39 @@ impl FluentClient for NopClient {
 
     async fn stop(self) -> Result<(), SendError> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_send_with_time() {
+        use std::collections::HashMap;
+
+        use chrono::TimeZone;
+
+        use crate::record::Value;
+        use crate::record_map;
+
+        let (sender, receiver) = channel::unbounded();
+        let client = Client { sender };
+
+        let timestamp = chrono::Utc.timestamp_opt(1234567, 0).unwrap().timestamp();
+        let record = record_map!("age".to_string() => 20.into());
+        assert!(client.send_with_time("test", record, timestamp).is_ok());
+
+        match receiver.recv() {
+            Ok(got) => match got {
+                Message::Record(r) => {
+                    assert_eq!(r.tag, "test");
+                    assert_eq!(r.record, record_map!("age".to_string() => 20.into()));
+                    assert_eq!(r.timestamp, 1234567);
+                }
+                Message::Terminate => unreachable!("got terminate message"),
+            },
+            Err(_) => unreachable!("failed to receive"),
+        }
     }
 }
