@@ -81,3 +81,8 @@ The default is 500.
 
 Sets the maximum number of retries.
 If the number of retries become larger than this value, the write/send operation will fail. The default is 10.
+
+### max_retry_wait
+
+The maximum duration of wait between retries, in milliseconds. If calculated retry wait is larger than this value, operation will fail.
+The default is 60,000 (60 seconds).

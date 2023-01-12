@@ -80,6 +80,7 @@ struct AckResponse {
 pub struct RetryConfig {
     pub initial_wait: u64,
     pub max: u32,
+    pub max_wait: u64,
 }
 
 pub struct Worker {
@@ -140,9 +141,12 @@ impl Worker {
                 Err(_) => {}
             }
 
-            wait_time = Duration::from_millis(
-                (self.retry_config.initial_wait as f64 * RETRY_INCREMENT_RATE.powi(i - 1)) as u64,
-            );
+            let mut t =
+                (self.retry_config.initial_wait as f64 * RETRY_INCREMENT_RATE.powi(i - 1)) as u64;
+            if t > self.retry_config.max_wait {
+                t = self.retry_config.max_wait;
+            }
+            wait_time = Duration::from_millis(t);
         }
         warn!("write's max retries exceeded.");
         Err(Error::MaxRetriesExceeded)

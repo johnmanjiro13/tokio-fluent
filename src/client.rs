@@ -46,8 +46,12 @@ pub struct Config {
     /// The default is 500.
     pub retry_wait: u64,
     /// The maximum number of retries. If the number of retries become larger
-    /// than this value, the write/send operation will fail. The default is 13.
+    /// than this value, the write/send operation will fail. The default is 10.
     pub max_retry: u32,
+    /// The maximum duration of wait between retries, in milliseconds.
+    /// If calculated retry wait is larger than this value, operation will fail.
+    /// The default is 60,000 (60 seconds).
+    pub max_retry_wait: u64,
 }
 
 impl Default for Config {
@@ -57,6 +61,7 @@ impl Default for Config {
             timeout: Duration::new(3, 0),
             retry_wait: 500,
             max_retry: 10,
+            max_retry_wait: 60000,
         }
     }
 }
@@ -87,6 +92,7 @@ impl Client {
                 RetryConfig {
                     initial_wait: config.retry_wait,
                     max: config.max_retry,
+                    max_wait: config.max_retry_wait,
                 },
             );
             worker.run().await
