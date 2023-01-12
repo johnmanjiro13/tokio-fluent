@@ -21,13 +21,18 @@ tokio-fluent = "0.2.1"
 ```rust
 use std::collections::HashMap;
 
-use tokio_fluent::client::{Client, Config, FluentClient};
+use tokio_fluent::{Client, Config, FluentClient};
 use tokio_fluent::record::{Map, Value};
 use tokio_fluent::record_map;
 
 #[tokio::main]
 async fn main() {
-    let client = Client::new(&Config { addr: "127.0.0.1:24224".parse().unwrap() }).await.unwrap();
+    let client = Client::new(&Config {
+        addr: "127.0.0.1:24224".parse().unwrap(),
+        ..Default::default()
+    })
+    .await
+    .unwrap();
 
     // With Map::new()
     let mut map = Map::new();
@@ -56,6 +61,7 @@ async fn main() {
 ```rust
 let client = Client::new(&Config {
         addr: "127.0.0.1:24224".parse().unwrap(),
+        ..Default::default()
     })
     .await
     .unwrap();
@@ -64,3 +70,19 @@ let client = Client::new(&Config {
 ### Timeout
 
 Set the timeout value of `std::time::Duration` to connect to the destination. The default is 3 seconds.
+
+### retry_wait
+
+Set the duration of the initial wait for the first retry, in milliseconds.
+The actual retry wait will be r * 1.5^(N-1) (r: this value, N: the number of retries). 
+The default is 500.
+
+### max_retry
+
+Sets the maximum number of retries.
+If the number of retries become larger than this value, the write/send operation will fail. The default is 10.
+
+### max_retry_wait
+
+The maximum duration of wait between retries, in milliseconds. If calculated retry wait is larger than this value, operation will fail.
+The default is 60,000 (60 seconds).

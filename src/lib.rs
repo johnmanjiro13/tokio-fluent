@@ -6,7 +6,7 @@
 //! use std::collections::HashMap;
 //!
 //! use tokio_fluent::record_map;
-//! use tokio_fluent::client::{Client, Config, FluentClient};
+//! use tokio_fluent::{Client, Config, FluentClient};
 //! use tokio_fluent::record::{Map, Value};
 //!
 //! #[tokio::main]
@@ -34,3 +34,5 @@
 pub mod client;
 pub mod record;
 mod worker;
+
+pub use client::{Client, Config, FluentClient};
