@@ -196,18 +196,55 @@ mod tests {
 
         let timestamp = chrono::Utc.timestamp_opt(1234567, 0).unwrap().timestamp();
         let record = record_map!("age".to_string() => 20.into());
-        assert!(client.send_with_time("test", record, timestamp).is_ok());
+        assert!(
+            client.send_with_time("test", record, timestamp).is_ok(),
+            "failed to send with time"
+        );
 
-        match receiver.recv() {
-            Ok(got) => match got {
-                Message::Record(r) => {
-                    assert_eq!(r.tag, "test");
-                    assert_eq!(r.record, record_map!("age".to_string() => 20.into()));
-                    assert_eq!(r.timestamp, 1234567);
-                }
-                Message::Terminate => unreachable!("got terminate message"),
-            },
-            Err(_) => unreachable!("failed to receive"),
+        let got = receiver.recv().expect("failed to receive");
+        match got {
+            Message::Record(r) => {
+                assert_eq!(r.tag, "test");
+                assert_eq!(r.record, record_map!("age".to_string() => 20.into()));
+                assert_eq!(r.timestamp, 1234567);
+            }
+            Message::Terminate => unreachable!("got terminate message"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_stop() {
+        let (sender, receiver) = channel::unbounded();
+        let client = Client { sender };
+        assert!(client.stop().await.is_ok(), "faled to stop");
+
+        let got = receiver.recv().expect("failed to receive");
+        match got {
+            Message::Record(_) => unreachable!("got record message"),
+            Message::Terminate => {}
+        };
+    }
+
+    #[test]
+    fn test_client_drop_sends_terminate() {
+        let (sender, receiver) = channel::unbounded();
+        {
+            Client { sender };
+        }
+        let got = receiver.recv().expect("failed to receive");
+        match got {
+            Message::Record(_) => unreachable!("got record message"),
+            Message::Terminate => {}
+        };
+    }
+
+    #[test]
+    fn test_default_config() {
+        let config: Config = Default::default();
+        assert_eq!(config.addr, "127.0.0.1:24224".parse().unwrap());
+        assert_eq!(config.timeout, Duration::new(3, 0));
+        assert_eq!(config.retry_wait, 500);
+        assert_eq!(config.max_retry, 10);
+        assert_eq!(config.max_retry_wait, 60000);
     }
 }
