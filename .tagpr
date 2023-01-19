@@ -32,4 +32,4 @@
 [tagpr]
 	vPrefix = true
 	releaseBranch = main
-	versionFile = Cargo.toml
+	versionFile = Cargo.toml,README.md
