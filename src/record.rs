@@ -31,7 +31,7 @@ impl Map {
 ///
 /// ## Example
 ///
-/// ```rust
+/// ```
 /// use std::collections::HashMap;
 ///
 /// use tokio_fluent::record_map;

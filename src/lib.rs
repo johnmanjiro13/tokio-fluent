@@ -2,7 +2,7 @@
 //!
 //! ## Example
 //!
-//! ```no_run
+//! ```
 //! use std::collections::HashMap;
 //!
 //! use tokio_fluent::record_map;

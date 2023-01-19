@@ -67,7 +67,7 @@ let client = Client::new(&Config {
     .unwrap();
 ```
 
-### Timeout
+### timeout
 
 Set the timeout value of `std::time::Duration` to connect to the destination. The default is 3 seconds.
 

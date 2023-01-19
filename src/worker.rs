@@ -4,7 +4,7 @@ use log::warn;
 use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter},
     net::TcpStream,
     time::Duration,
 };
@@ -40,7 +40,7 @@ impl std::fmt::Display for Error {
 #[derive(Debug, Serialize)]
 pub struct Record {
     pub tag: &'static str,
-    pub timestamp: u64,
+    pub timestamp: i64,
     pub record: Map,
     pub options: Options,
 }
@@ -72,7 +72,7 @@ struct SerializedRecord {
     chunk: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct AckResponse {
     ack: String,
 }
@@ -83,16 +83,19 @@ pub struct RetryConfig {
     pub max_wait: u64,
 }
 
-pub struct Worker {
-    stream: TcpStream,
+pub struct Worker<T = TcpStream> {
+    stream: BufWriter<T>,
     receiver: Receiver<Message>,
     retry_config: RetryConfig,
 }
 
-impl Worker {
-    pub fn new(stream: TcpStream, receiver: Receiver<Message>, retry_config: RetryConfig) -> Self {
+impl<T> Worker<T>
+where
+    T: AsyncWrite + AsyncRead + Unpin,
+{
+    pub fn new(stream: T, receiver: Receiver<Message>, retry_config: RetryConfig) -> Self {
         Self {
-            stream,
+            stream: BufWriter::new(stream),
             receiver,
             retry_config,
         }
@@ -187,5 +190,34 @@ impl Worker {
                 return Err(Error::ConnectionClosed);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_read_ack() {
+        let (client, mut server) = tokio::io::duplex(64);
+        let (_, receiver) = channel::unbounded();
+        let retry_config = RetryConfig {
+            initial_wait: 50,
+            max: 13,
+            max_wait: 60000,
+        };
+        let mut worker = Worker::new(client, receiver, retry_config);
+
+        let ack_response = AckResponse {
+            ack: "Mzc4NDQwMzctNGY4Ni00MmI2LWFiYjMtMjk3MGZkNDUzY2Y2".to_string(),
+        };
+        let ack_response = rmp_serde::to_vec(&ack_response).unwrap();
+        server.write_all(&ack_response).await.unwrap();
+
+        let ack = worker.read_ack().await.expect("failed to read ack");
+        assert_eq!(
+            ack.ack,
+            "Mzc4NDQwMzctNGY4Ni00MmI2LWFiYjMtMjk3MGZkNDUzY2Y2".to_string()
+        );
     }
 }
