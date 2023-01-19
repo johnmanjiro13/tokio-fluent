@@ -2,7 +2,7 @@
 //!
 //! ## Example
 //!
-//! ```no_run
+//! ```
 //! use tokio_fluent::{Client, Config, FluentClient};
 //! use tokio_fluent::record::{Map, Value};
 //!
