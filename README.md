@@ -74,7 +74,7 @@ Set the timeout value of `std::time::Duration` to connect to the destination. Th
 ### retry_wait
 
 Set the duration of the initial wait for the first retry, in milliseconds.
-The actual retry wait will be r * 1.5^(N-1) (r: this value, N: the number of retries). 
+The actual retry wait will be `r * 1.5^(N-1)` (r: this value, N: the number of retries). 
 The default is 500.
 
 ### max_retry
