@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.3.1](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.3.0...v0.3.1) - 2023-01-20
+- Revert "test: read_ack" by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/15
+
 ## [v0.3.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.2.1...v0.3.0) - 2023-01-19
 - Add timeout option by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/10
 - Add retry option by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/11
