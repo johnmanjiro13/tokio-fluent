@@ -81,7 +81,7 @@ impl Default for Config {
 
 #[async_trait]
 pub trait FluentClient: Send + Sync {
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), SendError>;
+    fn send(&self, tag: &str, record: Map) -> Result<(), SendError>;
     async fn stop(self) -> Result<(), SendError>;
 }
 
@@ -114,14 +114,9 @@ impl Client {
         Ok(Self { sender })
     }
 
-    fn send_with_time(
-        &self,
-        tag: &'static str,
-        record: Map,
-        timestamp: i64,
-    ) -> Result<(), SendError> {
+    fn send_with_time(&self, tag: &str, record: Map, timestamp: i64) -> Result<(), SendError> {
         let record = Record {
-            tag,
+            tag: tag.into(),
             record,
             timestamp,
             options: Options {
@@ -144,7 +139,7 @@ impl FluentClient for Client {
     /// `tag` - Event category of a record to send.
     ///
     /// `record` - Map object to send as a fluent record.
-    fn send(&self, tag: &'static str, record: Map) -> Result<(), SendError> {
+    fn send(&self, tag: &str, record: Map) -> Result<(), SendError> {
         self.send_with_time(tag, record, chrono::Local::now().timestamp())
     }
 
@@ -169,7 +164,7 @@ pub struct NopClient;
 
 #[async_trait]
 impl FluentClient for NopClient {
-    fn send(&self, _tag: &'static str, _record: Map) -> Result<(), SendError> {
+    fn send(&self, _tag: &str, _record: Map) -> Result<(), SendError> {
         Ok(())
     }
 
