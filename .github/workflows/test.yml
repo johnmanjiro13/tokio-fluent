@@ -4,15 +4,16 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - '**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fluentd-version: [v1.14, v1.15, v1.16]
     services:
       fluentd:
-        image: fluent/fluentd
+        image: fluent/fluentd:${{ matrix.fluentd-version }}
         ports:
           - 24224:24224
     steps:
