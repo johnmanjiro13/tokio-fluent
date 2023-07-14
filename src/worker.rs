@@ -39,7 +39,7 @@ impl std::fmt::Display for Error {
 
 #[derive(Debug, Serialize)]
 pub struct Record {
-    pub tag: &'static str,
+    pub tag: String,
     pub timestamp: i64,
     pub record: Map,
     pub options: Options,
