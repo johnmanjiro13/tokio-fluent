@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.4.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.3.1...v0.4.0) - 2023-07-18
+- ci: Run test with multiple fluentd versions by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/27
+- Allow for regular strings instead of only static strings by @DaanDD in https://github.com/johnmanjiro13/tokio-fluent/pull/25
+- Use tokio streams instead of crossbeam to fix deadlock issues by @DaanDD in https://github.com/johnmanjiro13/tokio-fluent/pull/26
+
 ## [v0.3.1](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.3.0...v0.3.1) - 2023-01-20
 - Revert "test: read_ack" by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/15
 
