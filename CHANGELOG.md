@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.4.1](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.0...v0.4.1) - 2023-07-18
+- fix(deps): update rust crate uuid to 1.4.1 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/20
+- chore(deps): update rust crate tokio to 1.29.1 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/18
+- fix(deps): update rust crate serde to 1.0.171 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/21
+- fix(deps): update rust crate log to 0.4.19 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/24
+- fix(deps): update rust crate bytes to 1.4.0 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/19
+- fix(deps): update rust crate chrono to 0.4.26 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/22
+- fix(deps): update rust crate base64 to 0.21.2 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/23
+
 ## [v0.4.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.3.1...v0.4.0) - 2023-07-18
 - ci: Run test with multiple fluentd versions by @johnmanjiro13 in https://github.com/johnmanjiro13/tokio-fluent/pull/27
 - Allow for regular strings instead of only static strings by @DaanDD in https://github.com/johnmanjiro13/tokio-fluent/pull/25
