@@ -1,11 +1,11 @@
 use bytes::{Buf, BufMut};
-use crossbeam::channel::{self, Receiver};
 use log::warn;
 use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
+    sync::broadcast::{error::RecvError, Receiver},
     time::Duration,
 };
 
@@ -37,7 +37,7 @@ impl std::fmt::Display for Error {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Record {
     pub tag: String,
     pub timestamp: i64,
@@ -45,7 +45,7 @@ pub struct Record {
     pub options: Options,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Options {
     pub chunk: String,
 }
@@ -61,6 +61,7 @@ impl Serialize for Options {
     }
 }
 
+#[derive(Clone)]
 pub enum Message {
     Record(Record),
     Terminate,
@@ -100,7 +101,7 @@ impl Worker {
 
     pub async fn run(&mut self) {
         loop {
-            match self.receiver.try_recv() {
+            match self.receiver.recv().await {
                 Ok(Message::Record(record)) => {
                     let record = match self.encode(record) {
                         Ok(record) => record,
@@ -115,8 +116,10 @@ impl Worker {
                         Err(_) => continue,
                     };
                 }
-                Err(channel::TryRecvError::Empty) => continue,
-                Ok(Message::Terminate) | Err(channel::TryRecvError::Disconnected) => break,
+                Err(RecvError::Closed) | Ok(Message::Terminate) => {
+                    break;
+                }
+                Err(RecvError::Lagged(_)) => continue,
             }
         }
     }

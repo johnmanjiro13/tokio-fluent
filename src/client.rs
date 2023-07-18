@@ -24,10 +24,12 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine};
-use crossbeam::channel::{self, Sender};
-use tokio::{net::TcpStream, time::timeout};
+use tokio::{
+    net::TcpStream,
+    sync::broadcast::{channel, Sender},
+    time::timeout,
+};
 use uuid::Uuid;
 
 use crate::record::Map;
@@ -79,10 +81,9 @@ impl Default for Config {
     }
 }
 
-#[async_trait]
 pub trait FluentClient: Send + Sync {
     fn send(&self, tag: &str, record: Map) -> Result<(), SendError>;
-    async fn stop(self) -> Result<(), SendError>;
+    fn stop(self) -> Result<(), SendError>;
 }
 
 #[derive(Debug, Clone)]
@@ -95,7 +96,7 @@ impl Client {
     /// Connect to the fluentd server and create a worker with tokio::spawn.
     pub async fn new(config: &Config) -> tokio::io::Result<Client> {
         let stream = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
-        let (sender, receiver) = channel::unbounded();
+        let (sender, receiver) = channel(1024);
 
         let config = config.clone();
         let _ = tokio::spawn(async move {
@@ -127,11 +128,11 @@ impl Client {
             .send(Message::Record(record))
             .map_err(|e| SendError {
                 source: e.to_string(),
-            })
+            })?;
+        Ok(())
     }
 }
 
-#[async_trait]
 impl FluentClient for Client {
     /// Send a fluent record to the fluentd server.
     ///
@@ -144,10 +145,13 @@ impl FluentClient for Client {
     }
 
     /// Stop the worker.
-    async fn stop(self) -> Result<(), SendError> {
-        self.sender.send(Message::Terminate).map_err(|e| SendError {
-            source: e.to_string(),
-        })
+    fn stop(self) -> Result<(), SendError> {
+        self.sender
+            .send(Message::Terminate)
+            .map_err(|e| SendError {
+                source: e.to_string(),
+            })?;
+        Ok(())
     }
 }
 
@@ -162,13 +166,12 @@ impl Drop for Client {
 /// NopClient does nothing.
 pub struct NopClient;
 
-#[async_trait]
 impl FluentClient for NopClient {
     fn send(&self, _tag: &str, _record: Map) -> Result<(), SendError> {
         Ok(())
     }
 
-    async fn stop(self) -> Result<(), SendError> {
+    fn stop(self) -> Result<(), SendError> {
         Ok(())
     }
 }
@@ -186,7 +189,7 @@ mod tests {
         use crate::record::Value;
         use crate::record_map;
 
-        let (sender, receiver) = channel::unbounded();
+        let (sender, mut receiver) = channel(1024);
         let client = Client { sender };
 
         let timestamp = chrono::Utc.timestamp_opt(1234567, 0).unwrap().timestamp();
@@ -196,7 +199,7 @@ mod tests {
             "failed to send with time"
         );
 
-        let got = receiver.recv().expect("failed to receive");
+        let got = receiver.try_recv().expect("failed to receive");
         match got {
             Message::Record(r) => {
                 assert_eq!(r.tag, "test");
@@ -207,13 +210,13 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_stop() {
-        let (sender, receiver) = channel::unbounded();
+    #[test]
+    fn test_stop() {
+        let (sender, mut receiver) = channel(1024);
         let client = Client { sender };
-        assert!(client.stop().await.is_ok(), "faled to stop");
+        assert!(client.stop().is_ok(), "faled to stop");
 
-        let got = receiver.recv().expect("failed to receive");
+        let got = receiver.try_recv().expect("failed to receive");
         match got {
             Message::Record(_) => unreachable!("got record message"),
             Message::Terminate => {}
@@ -222,11 +225,11 @@ mod tests {
 
     #[test]
     fn test_client_drop_sends_terminate() {
-        let (sender, receiver) = channel::unbounded();
+        let (sender, mut receiver) = channel(1024);
         {
             Client { sender };
         }
-        let got = receiver.recv().expect("failed to receive");
+        let got = receiver.try_recv().expect("failed to receive");
         match got {
             Message::Record(_) => unreachable!("got record message"),
             Message::Terminate => {}
