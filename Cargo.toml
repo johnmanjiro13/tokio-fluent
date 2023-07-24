@@ -22,7 +22,7 @@ bytes = { version = "1.4.0", features = ["serde"] }
 chrono = "0.4.26"
 log = "0.4.19"
 rmp-serde = "1.1.2"
-serde = { version = "1.0.171", features = ["derive"] }
+serde = { version = "1.0.175", features = ["derive"] }
 tokio = { version = "1.29.1", features = ["net", "time", "io-util", "rt", "sync"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 
