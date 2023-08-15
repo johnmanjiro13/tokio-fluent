@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.4.3](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.2...v0.4.3) - 2023-08-15
+- fix(deps): update rust crate serde to 1.0.183 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/33
+- fix(deps): update rust crate log to 0.4.20 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/36
+- chore(deps): update rust crate tokio to 1.31.0 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/35
+
 ## [v0.4.2](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.1...v0.4.2) - 2023-07-24
 - fix(deps): update rust crate rmp-serde to 1.1.2 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/30
 - fix(deps): update rust crate serde to 1.0.175 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/31
