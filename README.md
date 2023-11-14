@@ -27,10 +27,18 @@ use tokio_fluent::record_map;
 
 #[tokio::main]
 async fn main() {
-    let client = Client::new(&Config {
-        addr: "127.0.0.1:24224".parse().unwrap(),
-        ..Default::default()
-    })
+    // Connect to server using TCP
+    let client = Client::new_tcp(
+        "127.0.0.1:24224".parse().unwrap(),
+        &Config {..Default::default()}
+    )
+    .await
+    .unwrap();
+    // Or connecting using unix socket
+    let client_unix = Client::new_unix(
+        "/path/to/fluentd.sock",
+        &Config {..Default::default()}
+    )
     .await
     .unwrap();
 
@@ -59,10 +67,10 @@ async fn main() {
 ## Setting config values
 
 ```rust
-let client = Client::new(&Config {
-        addr: "127.0.0.1:24224".parse().unwrap(),
-        ..Default::default()
-    })
+let client = Client::new_tcp(
+        "127.0.0.1:24224".parse().unwrap(),
+        &Config {..Default::default()}
+    )
     .await
     .unwrap();
 ```

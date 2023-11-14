@@ -4,7 +4,6 @@ use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
     sync::broadcast::{error::RecvError, Receiver},
     time::Duration,
 };
@@ -84,14 +83,17 @@ pub struct RetryConfig {
     pub max_wait: u64,
 }
 
-pub struct Worker {
-    stream: TcpStream,
+pub struct Worker<StreamType> {
+    stream: StreamType,
     receiver: Receiver<Message>,
     retry_config: RetryConfig,
 }
 
-impl Worker {
-    pub fn new(stream: TcpStream, receiver: Receiver<Message>, retry_config: RetryConfig) -> Self {
+impl<StreamType> Worker<StreamType>
+where
+    StreamType: AsyncReadExt + AsyncWriteExt + Unpin,
+{
+    pub fn new(stream: StreamType, receiver: Receiver<Message>, retry_config: RetryConfig) -> Self {
         Self {
             stream,
             receiver,
