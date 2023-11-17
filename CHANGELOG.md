@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.5.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.4...v0.5.0) - 2023-11-17
+- !feat(client): uds support by @danielsig727 in https://github.com/johnmanjiro13/tokio-fluent/pull/47
+
 ## [v0.4.4](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.3...v0.4.4) - 2023-10-29
 - chore(deps): update actions/checkout action to v4 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/43
 - fix(deps): update rust crate uuid to 1.5.0 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/44
