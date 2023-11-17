@@ -2,6 +2,24 @@
 
 ## [v0.5.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.4...v0.5.0) - 2023-11-17
 - !feat(client): uds support by @danielsig727 in https://github.com/johnmanjiro13/tokio-fluent/pull/47
+### Breaking Changes
+- Removed `new` method from `Client` and added `new_tcp` and `new_unix` methods.
+  - Removed `addr` option from `Config`.
+
+
+```rust
+// Before
+let client = Client::new(&Config {
+    addr: "127.0.0.1:24224".parse().unwrap(),
+    ..Default::default()
+})
+
+// After
+let client = Client::new_tcp(
+    "127.0.0.1:24224".parse().unwrap(),
+    &Config {..Default::default()}
+)
+```
 
 ## [v0.4.4](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.3...v0.4.4) - 2023-10-29
 - chore(deps): update actions/checkout action to v4 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/43
