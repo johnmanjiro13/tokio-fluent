@@ -11,10 +11,10 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let client = Client::new(&Config {
-//!         addr: "127.0.0.1:24224".parse().unwrap(),
-//!         ..Default::default()
-//!     })
+//!     let client = Client::new_tcp(
+//!         "127.0.0.1:24224".parse().unwrap(),
+//!         &Config{..Default::default()},
+//!     )
 //!     .await
 //!     .unwrap();
 //!

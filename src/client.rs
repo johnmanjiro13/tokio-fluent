@@ -8,10 +8,10 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let client = Client::new(&Config {
-//!         addr: "127.0.0.1:24224".parse().unwrap(),
-//!         ..Default::default()
-//!     })
+//!     let client = Client::new_tcp(
+//!         "127.0.0.1:24224".parse().unwrap(),
+//!         &Config{..Default::default()},
+//!     )
 //!     .await
 //!     .unwrap();
 //!
@@ -22,11 +22,12 @@
 //! ```
 
 use std::net::SocketAddr;
+use std::path::Path;
 use std::time::Duration;
 
 use base64::{engine::general_purpose, Engine};
 use tokio::{
-    net::TcpStream,
+    net::{TcpStream, UnixStream},
     sync::broadcast::{channel, Sender},
     time::timeout,
 };
@@ -51,9 +52,6 @@ impl std::fmt::Display for SendError {
 #[derive(Debug, Clone)]
 /// Config for a client.
 pub struct Config {
-    /// The address of the fluentd server.
-    /// The default is `127.0.0.1:24224`.
-    pub addr: SocketAddr,
     /// The timeout value to connect to the fluentd server.
     /// The default is 3 seconds.
     pub timeout: Duration,
@@ -72,7 +70,6 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            addr: "127.0.0.1:24224".parse().unwrap(),
             timeout: Duration::new(3, 0),
             retry_wait: 500,
             max_retry: 10,
@@ -93,9 +90,31 @@ pub struct Client {
 }
 
 impl Client {
-    /// Connect to the fluentd server and create a worker with tokio::spawn.
-    pub async fn new(config: &Config) -> tokio::io::Result<Client> {
-        let stream = timeout(config.timeout, TcpStream::connect(config.addr)).await??;
+    /// Connect to the fluentd server using TCP and create a worker with tokio::spawn.
+    pub async fn new_tcp(addr: SocketAddr, config: &Config) -> tokio::io::Result<Client> {
+        let stream = timeout(config.timeout, TcpStream::connect(addr)).await??;
+        let (sender, receiver) = channel(1024);
+
+        let config = config.clone();
+        let _ = tokio::spawn(async move {
+            let mut worker = Worker::new(
+                stream,
+                receiver,
+                RetryConfig {
+                    initial_wait: config.retry_wait,
+                    max: config.max_retry,
+                    max_wait: config.max_retry_wait,
+                },
+            );
+            worker.run().await
+        });
+
+        Ok(Self { sender })
+    }
+
+    /// Connect to the fluentd server using unix domain socket and create a worker with tokio::spawn.
+    pub async fn new_unix<P: AsRef<Path>>(path: P, config: &Config) -> tokio::io::Result<Client> {
+        let stream = timeout(config.timeout, UnixStream::connect(path)).await??;
         let (sender, receiver) = channel(1024);
 
         let config = config.clone();
@@ -239,7 +258,6 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config: Config = Default::default();
-        assert_eq!(config.addr, "127.0.0.1:24224".parse().unwrap());
         assert_eq!(config.timeout, Duration::new(3, 0));
         assert_eq!(config.retry_wait, 500);
         assert_eq!(config.max_retry, 10);
