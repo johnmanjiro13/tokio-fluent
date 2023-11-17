@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.4.4](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.3...v0.4.4) - 2023-10-29
+- chore(deps): update actions/checkout action to v4 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/43
+- fix(deps): update rust crate uuid to 1.5.0 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/44
+- fix(deps): update rust crate base64 to 0.21.5 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/39
+
 ## [v0.4.3](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.2...v0.4.3) - 2023-08-15
 - fix(deps): update rust crate serde to 1.0.183 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/33
 - fix(deps): update rust crate log to 0.4.20 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/36
