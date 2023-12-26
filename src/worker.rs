@@ -19,7 +19,6 @@ pub enum Error {
     AckUnmatched(String, String),
     MaxRetriesExceeded,
     ConnectionClosed,
-    BrokenPipe,
 }
 
 impl std::error::Error for Error {}
@@ -32,7 +31,6 @@ impl std::fmt::Display for Error {
             Error::AckUnmatched(_, _) => "request chunk and response ack did not match",
             Error::MaxRetriesExceeded => "max retries exceeded",
             Error::ConnectionClosed => "connection closed",
-            Error::BrokenPipe => "Broken pipe"
         };
         write!(f, "{}", s)
     }
@@ -148,10 +146,9 @@ where
             match self.write(record).await {
                 Ok(_) => return Ok(()),
                 Err(Error::ConnectionClosed) => {
-                    warn!("---------------------CONNECTION CLOSED ERROR!--------------");
                     return Err(Error::ConnectionClosed)},
                 Err(e) => {
-                    warn!("GOT some other error: {:#?}", e.to_string());
+                    warn!("Received error when writing: {:?}", e.to_string());
                 }
             }
 
@@ -162,33 +159,9 @@ where
             }
             wait_time = Duration::from_millis(t);
         }
-        warn!("write's max retries exceeded.");
+        warn!("Write's max retries exceeded.");
         Err(Error::MaxRetriesExceeded)
     }
-
-    // async fn write(&mut self, record: &SerializedRecord) -> Result<(), Error> {
-    //     // match self.stream
-    //     // .write_all(record.record.chunk())
-    //     // .await {
-    //     //     Ok(_) => {},
-    //     //     Err() => 
-    //     // }
-    //     self.stream
-    //         .write_all(record.record.chunk())
-    //         .await
-    //         .map_err(|e| Error::WriteFailed(e.to_string()))?;
-
-    //     let received_ack = self.read_ack().await?;
-
-    //     if received_ack.ack != record.chunk {
-    //         warn!(
-    //             "ack and chunk did not match. ack: {}, chunk: {}",
-    //             received_ack.ack, record.chunk
-    //         );
-    //         return Err(Error::AckUnmatched(received_ack.ack, record.chunk.clone()));
-    //     }
-    //     Ok(())
-    // }
 
     async fn write(&mut self, record: &SerializedRecord) -> Result<(), Error> {
         match self.stream.write_all(record.record.chunk()).await {
@@ -213,8 +186,6 @@ where
                 || e.kind() == tokio::io::ErrorKind::BrokenPipe => {
                 Err(Error::ConnectionClosed)
             }
-            // for any other error that's not connection-lost related,
-            // we just get all the info and return
             Err(e) => {
                 Err(Error::WriteFailed(e.to_string()))},
         }
