@@ -4,10 +4,7 @@ use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    sync::broadcast::{
-        error::{self, RecvError},
-        Receiver,
-    },
+    sync::broadcast::{error::RecvError, Receiver},
     time::Duration,
 };
 
