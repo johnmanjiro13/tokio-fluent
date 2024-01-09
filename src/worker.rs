@@ -1,5 +1,5 @@
 use bytes::{Buf, BufMut};
-use log::warn;
+use log::{error, warn};
 use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
@@ -115,7 +115,17 @@ where
 
                     match self.write_with_retry(&record).await {
                         Ok(_) => {}
-                        Err(_) => continue,
+                        Err(e) => match e {
+                            Error::MaxRetriesExceeded => {
+                                error!("Reached MaxRetriesExceeded");
+                                break;
+                            }
+                            Error::ConnectionClosed => {
+                                error!("Reached ConnectionClosed");
+                                break;
+                            }
+                            _ => continue,
+                        },
                     };
                 }
                 Err(RecvError::Closed) | Ok(Message::Terminate) => {
@@ -143,7 +153,9 @@ where
             match self.write(record).await {
                 Ok(_) => return Ok(()),
                 Err(Error::ConnectionClosed) => return Err(Error::ConnectionClosed),
-                Err(_) => {}
+                Err(e) => {
+                    warn!("Received error when writing: {:?}", e.to_string());
+                }
             }
 
             let mut t =
@@ -153,26 +165,36 @@ where
             }
             wait_time = Duration::from_millis(t);
         }
-        warn!("write's max retries exceeded.");
+        warn!("Write's max retries exceeded.");
         Err(Error::MaxRetriesExceeded)
     }
 
     async fn write(&mut self, record: &SerializedRecord) -> Result<(), Error> {
-        self.stream
-            .write_all(record.record.chunk())
-            .await
-            .map_err(|e| Error::WriteFailed(e.to_string()))?;
+        match self.stream.write_all(record.record.chunk()).await {
+            Ok(_) => {
+                let received_ack = self.read_ack().await?;
 
-        let received_ack = self.read_ack().await?;
-
-        if received_ack.ack != record.chunk {
-            warn!(
-                "ack and chunk did not match. ack: {}, chunk: {}",
-                received_ack.ack, record.chunk
-            );
-            return Err(Error::AckUnmatched(received_ack.ack, record.chunk.clone()));
+                if received_ack.ack != record.chunk {
+                    warn!(
+                        "ack and chunk did not match. ack: {}, chunk: {}",
+                        received_ack.ack, record.chunk
+                    );
+                    Err(Error::AckUnmatched(received_ack.ack, record.chunk.clone()))
+                } else {
+                    Ok(())
+                }
+            }
+            // lost connection could look like multpile kinds of errors,
+            // so we're attempting to catch all of them here
+            Err(e)
+                if e.kind() == std::io::ErrorKind::ConnectionReset
+                    || e.kind() == std::io::ErrorKind::ConnectionAborted
+                    || e.kind() == tokio::io::ErrorKind::BrokenPipe =>
+            {
+                Err(Error::ConnectionClosed)
+            }
+            Err(e) => Err(Error::WriteFailed(e.to_string())),
         }
-        Ok(())
     }
 
     async fn read_ack(&mut self) -> Result<AckResponse, Error> {
@@ -181,7 +203,6 @@ where
             if let Ok(ack) = rmp_serde::from_slice::<AckResponse>(&buf) {
                 return Ok(ack);
             }
-
             if self
                 .stream
                 .read_buf(&mut buf)
