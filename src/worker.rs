@@ -4,7 +4,7 @@ use rmp_serde::Serializer;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    sync::broadcast::{error::RecvError, Receiver},
+    sync::broadcast::{error::{RecvError, self}, Receiver},
     time::Duration,
 };
 
@@ -116,9 +116,17 @@ where
                     match self.write_with_retry(&record).await {
                         Ok(_) => {}
                         Err(e) => {
-                            error!("GOT ERROR FROM write_with_retry: {:#?}", e.to_string());
-                            // TODO: attempt to reconnect the tcp stream we're writing to
-                            continue;
+                            match e {
+                                Error::MaxRetriesExceeded => {
+                                    error!("Reached MaxRetriesExceeded");
+                                    break;
+                                },
+                                Error::ConnectionClosed => {
+                                    error!("Reached ConnectionClosed");
+                                    break;
+                                },
+                                _ => continue,
+                            }
                         }
                     };
                 }
