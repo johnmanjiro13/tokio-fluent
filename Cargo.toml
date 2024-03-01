@@ -20,7 +20,7 @@ include = [
 base64 = "0.21.5"
 bytes = { version = "1.4.0", features = ["serde"] }
 chrono = "0.4.26"
-log = "0.4.20"
+log = "0.4.21"
 rmp-serde = "1.1.2"
 serde = { version = "1.0.183", features = ["derive"] }
 tokio = { version = "1.31.0", features = ["net", "time", "io-util", "rt", "sync"] }
