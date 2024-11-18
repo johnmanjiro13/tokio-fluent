@@ -94,3 +94,11 @@ If the number of retries become larger than this value, the write/send operation
 
 The maximum duration of wait between retries, in milliseconds. If calculated retry wait is larger than this value, operation will fail.
 The default is 60,000 (60 seconds).
+
+### max_connection_lifetime
+
+The maximum lifetime of a connection before reconnection is attempted.
+
+Note that reconnection is only triggered when new log lines are sent.
+If no new log lines are received within this timeframe, the connection will remain open, even if it's older than the value.
+The default is 0 (no reconnection).
