@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.1](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.5.0...v0.5.1) - 2024-12-02
+- feat: support max_connection_lifetime and reconnection by @danielsig727 in https://github.com/johnmanjiro13/tokio-fluent/pull/55
+- fix(deps): update rust crate base64 to 0.22.0 by @renovate in https://github.com/johnmanjiro13/tokio-fluent/pull/51
+
 ## [v0.5.0](https://github.com/johnmanjiro13/tokio-fluent/compare/v0.4.4...v0.5.0) - 2023-11-17
 - !feat(client): uds support by @danielsig727 in https://github.com/johnmanjiro13/tokio-fluent/pull/47
 ### Breaking Changes
