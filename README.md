@@ -13,7 +13,7 @@ Add this to your `Cargo.toml`
 
 ```toml
 [dependencies]
-tokio-fluent = "0.5.0"
+tokio-fluent = "0.5.1"
 ```
 
 ## Example
